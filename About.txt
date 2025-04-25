@@ -1,0 +1,36 @@
+1. core.py - Core Functions (API Interactions)
+
+Purpose: This file contains the core functions of the project responsible for communicating with the outside world, specifically managing requests to external API (Application Programming Interface) services.
+Functionality:
+fetch_earthquakes: Fetches earthquake data (in JSON format) from the European-Mediterranean Seismological Centre (EMSC) FDSNWS service for a specified time range and geographical boundaries. Includes configurable timeout and error handling.
+get_location_name: Retrieves a human-readable location name for given latitude and longitude coordinates using reverse geocoding via the OpenStreetMap Nominatim service. It checks a local database cache (via data.py) before making a request, saves results from the API to the cache, and waits between requests to comply with API usage policies. Includes error handling and configurable timeouts.
+
+2. data.py - Data Management (Database Operations)
+
+Purpose: This file manages all database-related operations for the project. It interacts with the SQLite database (deprem.db) to ensure data persistence.
+Functionality:
+init_db: Creates the SQLite database file and the necessary tables (earthquakes, locations) if they don't exist when the program first runs, or checks the existing ones. It also creates indexes on tables for better read performance.
+earthquake_exists: Checks if an earthquake with the given unique ID (unid) is already registered in the earthquakes table in the database.
+save_earthquake: Inserts the details of a new earthquake event (time, location, magnitude, depth, region, place name, etc.) along with the timestamp when the record was added (rectime) into the earthquakes table.
+get_location_from_cache: Reads the previously queried and saved location name for a specific latitude/longitude from the locations (cache) table.
+save_location_to_cache: Saves a new location name obtained from the Nominatim API, along with its corresponding coordinates, into the locations table.
+
+3. main.py - Main Application Logic
+
+Purpose: This file serves as the main entry point of the application, orchestrating the workflow by bringing all the pieces together. Configuration, the main loop, helper functions, and the user interface (console outputs) reside here.
+Functionality:
+Configuration: Defines settings such as the database filename, API timeouts, check interval, geographical filters, etc.
+Initialization: Initializes the database (init_db) and prints a summary of recent records from the database (print_initial_summary) when the program starts.
+Main Loop (while True):
+Runs continuously at specified intervals (FETCH_INTERVAL_SECONDS).
+Fetches earthquake data from EMSC using core.fetch_earthquakes.
+Passes each retrieved earthquake event to the process_new_earthquake helper function.
+Helper Functions:
+parse_event_time: Parses ISO time strings from the API into UTC datetime objects using strptime.
+format_local_time: Converts UTC datetime objects to the local Turkish time zone and returns a formatted string.
+calculate_delay: Calculates the difference in minutes between the earthquake's event time and the time it was processed by the script.
+print_earthquake_details: Prints the details of a newly found earthquake to the console in a formatted manner.
+process_new_earthquake: Takes a single earthquake event, checks if it exists in the database (data.earthquake_exists), and if not, retrieves the location name (core.get_location_name), saves it to the database (data.save_earthquake), and prints the details.
+print_initial_summary: Reads past records from the database and presents a formatted summary.
+Error Handling: Includes try...except blocks within the main loop to handle API request errors (Timeout, network errors) and other unexpected exceptions.
+Logging: Uses the logging module to generate informative messages about the program's operation.
